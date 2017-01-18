@@ -6,6 +6,7 @@
 #include "RakNetTypes.h"  // MessageID
 #include "Gets.h"
 #include "RakSleep.h"
+#include <conio.h>
 
 #define MAX_CLIENTS 10
 #define SERVER_PORT 60000
@@ -58,6 +59,10 @@ int main(void) {
 
     while (1) {
         RakSleep(30);
+        if (_kbhit()) {
+            Gets(message, sizeof(message));
+            peer->Send(message, (const int)strlen(message) + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
+        }
         for (packet = peer->Receive(); packet; peer->DeallocatePacket(packet), packet = peer->Receive()) {
             switch (packet->data[0]) {
             case ID_REMOTE_DISCONNECTION_NOTIFICATION:
@@ -113,7 +118,8 @@ int main(void) {
             break;
 
             default:
-                printf("Message with identifier %i has arrived.\n", packet->data[0]);
+                printf("%s\n", packet->data);
+                sprintf(message, "%s", packet->data);
                 peer->Send(message, (const int)strlen(message) + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, true);
                 break;
             }
