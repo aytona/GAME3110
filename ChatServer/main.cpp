@@ -19,14 +19,30 @@ int main(void) {
     char str[512];
 
     RakNet::RakPeerInterface *peer = RakNet::RakPeerInterface::GetInstance();
-    bool isServer;
+    bool isServer; 
     RakNet::Packet *packet;
     char message[2048];
+    char nameInput[2048];
 
     printf("My IP addresses:\n");
     for (unsigned int i = 0; i < peer->GetNumberOfAddresses(); i++) {
         RakNet::SystemAddress sa = peer->GetInternalID(RakNet::UNASSIGNED_SYSTEM_ADDRESS, i);
         printf("%i. %s (LAN=%i)\n", i + 1, sa.ToString(false), sa.IsLANAddress());
+    }
+
+    printf("\nEnter Username: ");
+    Gets(nameInput, sizeof(nameInput));
+    int i = 0;
+    while (i < sizeof(nameInput) / sizeof(nameInput[0])) {
+        if (nameInput[i] == '\0' || nameInput[i] == ' ') {
+            nameInput[i] = ':';
+            ++i;
+            nameInput[i] = ' ';
+            ++i;
+            nameInput[i] = '\0';
+            break;
+        }
+        ++i;
     }
 
     printf("\n(C) or (S)erver?\n");
@@ -59,9 +75,13 @@ int main(void) {
 
     while (1) {
         RakSleep(30);
+        char broadcastMsg[2048];
+        broadcastMsg[0] = 0;
         if (_kbhit()) {
             Gets(message, sizeof(message));
-            peer->Send(message, (const int)strlen(message) + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
+            strncat(broadcastMsg, nameInput, sizeof(broadcastMsg));
+            strncat(broadcastMsg, message, sizeof(broadcastMsg));
+            peer->Send(broadcastMsg, (const int)strlen(broadcastMsg) + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
         }
         for (packet = peer->Receive(); packet; peer->DeallocatePacket(packet), packet = peer->Receive()) {
             switch (packet->data[0]) {
@@ -119,8 +139,8 @@ int main(void) {
 
             default:
                 printf("%s\n", packet->data);
-                sprintf(message, "%s", packet->data);
-                peer->Send(message, (const int)strlen(message) + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, true);
+                sprintf(broadcastMsg, "%s", packet->data);
+                peer->Send(broadcastMsg, (const int)strlen(broadcastMsg) + 1, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, true);
                 break;
             }
         }
