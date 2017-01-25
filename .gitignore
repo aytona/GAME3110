@@ -8,6 +8,7 @@ x64/
 *.user
 *.suo
 *VC.db
+*.VC.VC.opendb
 
 # Xcode and OS X 
 build/
